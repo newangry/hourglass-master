@@ -1,0 +1,622 @@
+/* eslint-disable no-plusplus */
+/* eslint-disable no-param-reassign */
+/* eslint-disable no-use-before-define */
+import OlStyle from 'ol/style/Style';
+import OlStroke from 'ol/style/Stroke';
+import OlFill from 'ol/style/Fill';
+import OlCircle from 'ol/style/Circle';
+import OlRegularShape from 'ol/style/RegularShape';
+import OlIconStyle from 'ol/style/Icon';
+import OlText from 'ol/style/Text';
+import store from '../store/modules/map';
+
+// Resets cache when map groups is changed.
+import {EventBus} from '../EventBus';
+
+const strokeColor = 'rgba(236, 236, 236, 0.7)';
+const fillColor = 'rgba(255,0,0, 0.2)';
+const imageColor = 'blue';
+const radiusHighlightColor = 'rgba(232,223,181,0.3)';
+const zIndex = 100;
+EventBus.$on('group-changed', () => {
+  styleCache = {};
+});
+
+export function defaultStyle(feature) {
+  const geomType = feature.getGeometry().getType();
+  const style = new OlStyle({
+    fill: new OlFill({
+      color: ['MultiPolygon', 'Polygon'].includes(geomType) ? '#FF0000' : [0, 0, 0, 0],
+    }),
+    stroke: new OlStroke({
+      color: ['MultiPolygon', 'Polygon'].includes(geomType) ? '#FF0000' : '#FF0000',
+      width: 3,
+    }),
+    image: new OlCircle({
+      radius: 7,
+      fill: new OlFill({
+        color: '#FF0000',
+      }),
+    }),
+  });
+  return [style];
+}
+
+export function getFeatureHighlightStyle() {
+  return [
+    new OlStyle({
+      fill: new OlFill({
+        color: [0, 0, 0, 0],
+      }),
+      stroke: new OlStroke({
+        color: '#FF0000',
+        width: 10,
+      }),
+      image: new OlCircle({
+        radius: 10,
+        fill: new OlFill({
+          color: '#FF0000',
+        }),
+      }),
+    }),
+  ];
+}
+
+export function getSearchHighlightStyle() {
+  return [
+    new OlStyle({
+      fill: new OlFill({
+        color: 'rgba(255,0,0,0.2)',
+      }),
+      stroke: new OlStroke({
+        color: '#FF0000',
+        width: 3,
+      }),
+      image: new OlCircle({
+        radius: 8,
+        stroke: new OlStroke({
+          color: '#FF0000',
+          width: 3,
+        }),
+        fill: new OlFill({
+          color: 'rgba(255,0,0,0.2)',
+        }),
+      }),
+    }),
+  ];
+}
+
+/**
+ * Style used for popup selected feature highlight
+ */
+
+export function popupInfoStyle() {
+  // MAJK: PopupInfo layer style (used for highlight)
+  const styleFunction = () => {
+    const styles = [];
+    styles.push(
+      new OlStyle({
+        stroke: new OlStroke({
+          color: strokeColor,
+          width: 20,
+        }),
+        zIndex,
+      })
+    );
+    styles.push(
+      new OlStyle({
+        fill: new OlFill({
+          color: fillColor,
+        }),
+        stroke: new OlStroke({
+          color: imageColor,
+          width: 4,
+        }),
+        image: new OlCircle({
+          radius: 25,
+          fill: new OlFill({
+            color: radiusHighlightColor,
+          }),
+        }),
+        zIndex,
+      })
+    );
+
+    return styles;
+  };
+  return styleFunction;
+}
+
+export function postEditLayerStyle() {
+  const styles = [];
+  styles.push(
+    new OlStyle({
+      image: new OlCircle({
+        radius: 27,
+        stroke: new OlStroke({
+          color: 'red',
+          width: 3,
+        }),
+        fill: new OlFill({
+          color: 'rgba(236, 236, 236, 0.5)',
+        }),
+      }),
+      zIndex: 1000,
+    })
+  );
+
+  styles.push(
+    new OlStyle({
+      image: new OlIconStyle({
+        anchor: [0.5, 40],
+        scale: 1,
+        anchorXUnits: 'fraction',
+        anchorYUnits: 'pixels',
+        src: 'icons/marker-focused.png',
+      }),
+      zIndex: 1001,
+    })
+  );
+
+  return styles;
+}
+
+export function networkCorpHighlightStyle() {
+  const styleFunction = () => {
+    const styles = [];
+    styles.push(
+      new OlStyle({
+        fill: new OlFill({
+          color: fillColor,
+        }),
+        stroke: new OlStroke({
+          color: imageColor,
+          width: 4,
+        }),
+        image: new OlCircle({
+          radius: 7,
+          fill: new OlFill({
+            color: imageColor,
+          }),
+        }),
+      })
+    );
+
+    return styles;
+  };
+  return styleFunction;
+}
+
+/**
+ * Style used for corporate overlay highlight
+ */
+
+export function worldOverlayFill() {
+  const styleFunction = () => {
+    const styles = [];
+    styles.push(
+      new OlStyle({
+        fill: new OlFill({
+          color: 'rgba(236, 236, 236, 0.75)',
+        }),
+        zIndex: 300,
+      })
+    );
+    return styles;
+  };
+  return styleFunction;
+}
+
+/**
+ * Style function used for vector layers.
+ */
+let styleCache = {};
+export function baseStyle(config) {
+  const styleFunction = (feature, resolution) => {
+    // Get cache uid.
+    let cacheId;
+    if (config.stylePropFnRef) {
+      cacheId = `${config.layerName}-`;
+      Object.keys(config.stylePropFnRef).forEach(key => {
+        const value = feature.get(config.stylePropFnRef[key]);
+        if (value) {
+          cacheId += value;
+        }
+      });
+    }
+
+    let _style;
+    if (!styleCache[cacheId]) {
+      const {
+        strokeColor,
+        fillColor,
+        strokeWidth,
+        lineDash,
+        label,
+        radius,
+        radius2,
+        points,
+        angle,
+        iconUrl,
+        iconScale,
+        scale,
+        opacity,
+        iconAnchor,
+        iconAnchorXUnits,
+        iconAnchorYUnits,
+        stylePropFnRef,
+      } = config;
+
+      const geometryType = feature.getGeometry().getType();
+      let labelText;
+      if (label && feature.get(label.text)) {
+        const fontWeight = label.fontWeight || 'normal';
+        const fontSize = label.fontSize || 12;
+        const fontType = label.fontType || 'Arial';
+        const font = `${fontWeight} ${fontSize}/${1} ${fontType}`;
+        const placement =
+          (!['Point', 'MultiPoint'].includes(geometryType) && label.placement !== 'point') || !label.placement
+            ? 'point'
+            : label.placement;
+
+        labelText = new OlText({
+          font,
+          textAlign: label.textAlign,
+          text: getText(feature.get(label.text), resolution, label.maxResolution || 1200, placement),
+          offsetX: label.offsetX || 12,
+          offsetY: label.offsetY || 0,
+          fill: new OlFill({color: label.fill.color || 'black'}),
+          stroke: new OlStroke({
+            color: label.stroke.color || 'white',
+            width: label.stroke.width || 3,
+          }),
+        });
+      }
+
+      switch (geometryType) {
+        /**
+         * Style used for geometry point type. It will render a circle based on the given formula
+         */
+        case 'Point':
+        case 'MultiPoint': {
+          let style;
+          if (iconUrl || iconScale) {
+            const options = {
+              image: new OlIconStyle({
+                src:
+                  stylePropFnRef && stylePropFnRef.iconUrl && iconUrl instanceof Function
+                    ? iconUrl(feature.get(stylePropFnRef.iconUrl))
+                    : iconUrl,
+                scale:
+                  stylePropFnRef && stylePropFnRef.iconScale && iconScale
+                    ? iconScale(feature.get(stylePropFnRef.iconScale))
+                    : scale || 1,
+                opacity: opacity || 1,
+                anchor: iconAnchor,
+                anchorXUnits: iconAnchorXUnits,
+                anchorYUnits: iconAnchorYUnits,
+              }),
+            };
+            if (labelText) {
+              options.text = labelText;
+            }
+            style = new OlStyle(options);
+          } else {
+            const baseImageOptions = {
+              stroke: new OlStroke({
+                color:
+                  stylePropFnRef && stylePropFnRef.strokeColor && strokeColor instanceof Function
+                    ? strokeColor(feature.get(stylePropFnRef.strokeColor))
+                    : strokeColor || 'rgba(255, 255, 255, 1)',
+                width:
+                  stylePropFnRef && stylePropFnRef.strokeWidth && strokeWidth instanceof Function
+                    ? strokeWidth(feature.get(stylePropFnRef.strokeWidth))
+                    : strokeWidth || 1,
+              }),
+              fill: new OlFill({
+                color:
+                  stylePropFnRef && stylePropFnRef.fillColor && fillColor instanceof Function
+                    ? fillColor(feature.get(stylePropFnRef.fillColor))
+                    : fillColor || 'rgba(129, 56, 17, 0.7)',
+              }),
+              radius:
+                stylePropFnRef && stylePropFnRef.radius && radius instanceof Function
+                  ? radius(feature.get(stylePropFnRef.radius))
+                  : radius || 5,
+            };
+            let image;
+            if (config.type === 'circle') {
+              image = new OlCircle({
+                ...baseImageOptions,
+              });
+            } else {
+              image = new OlRegularShape({
+                ...baseImageOptions,
+                radius2:
+                  stylePropFnRef && stylePropFnRef.radius2 && radius2 instanceof Function
+                    ? radius2(feature.get(stylePropFnRef.radius2))
+                    : radius2,
+                points:
+                  stylePropFnRef && stylePropFnRef.points && points instanceof Function
+                    ? points(feature.get(stylePropFnRef.points))
+                    : points || 4,
+                angle:
+                  stylePropFnRef && stylePropFnRef.angle && angle instanceof Function
+                    ? angle(feature.get(stylePropFnRef.angle))
+                    : angle || 0,
+                scale:
+                  stylePropFnRef && stylePropFnRef.scale && scale instanceof Function
+                    ? scale(feature.get(stylePropFnRef.scale))
+                    : scale,
+              });
+            }
+
+            const options = {
+              image,
+            };
+
+            if (labelText) {
+              options.text = labelText;
+            }
+            style = new OlStyle(options);
+          }
+
+          if (cacheId) {
+            styleCache[cacheId] = style;
+          } else {
+            _style = style;
+          }
+          break;
+        }
+        /**
+         * Style used for line geometry type.
+         */
+        case 'LineString':
+        case 'MultiLineString': {
+          const options = {
+            stroke: new OlStroke({
+              color:
+                stylePropFnRef && stylePropFnRef.strokeColor && strokeColor instanceof Function
+                  ? strokeColor(feature.get(stylePropFnRef.strokeColor))
+                  : strokeColor || 'rgba(255, 255, 255, 1)',
+              width:
+                stylePropFnRef && stylePropFnRef.strokeWidth && strokeWidth instanceof Function
+                  ? strokeWidth(feature.get(stylePropFnRef.strokeWidth))
+                  : strokeWidth || 4,
+              lineDash,
+            }),
+          };
+          if (labelText) {
+            options.text = labelText;
+          }
+          const style = new OlStyle(options);
+          if (cacheId) {
+            styleCache[cacheId] = style;
+          } else {
+            _style = style;
+          }
+          break;
+        }
+        case 'Polygon':
+        case 'MultiPolygon': {
+          const options = {
+            fill: new OlFill({
+              color:
+                stylePropFnRef && stylePropFnRef.fillColor && fillColor instanceof Function
+                  ? fillColor(feature.get(stylePropFnRef.fillColor))
+                  : fillColor || 'rgba(255, 255, 255, 1)',
+            }),
+          };
+
+          if ((stylePropFnRef && stylePropFnRef.strokeColor) || strokeColor) {
+            options.stroke = new OlStroke({
+              color:
+                stylePropFnRef && stylePropFnRef.strokeColor && strokeColor instanceof Function
+                  ? strokeColor(feature.get(stylePropFnRef.strokeColor))
+                  : strokeColor || '#ffffff',
+              width:
+                stylePropFnRef && stylePropFnRef.strokeWidth && strokeWidth instanceof Function
+                  ? strokeWidth(feature.get(stylePropFnRef.strokeWidth))
+                  : strokeWidth || 0,
+              lineDash: lineDash || null,
+            });
+          }
+          if (labelText) {
+            options.text = labelText;
+          }
+          const style = new OlStyle(options);
+          if (cacheId) {
+            styleCache[cacheId] = style;
+          } else {
+            _style = style;
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    }
+    return styleCache[cacheId] || _style || defaultStyle;
+  };
+  return styleFunction;
+}
+
+export function colorMapStyle(layerName, colorField) {
+  const styleFunction = feature => {
+    const field = colorField || 'entity';
+    const entity = feature.get(field);
+    const colors = store.state.colorMapEntities[layerName];
+    if (colors && colors[entity] && entity) {
+      if (!styleCache[entity]) {
+        styleCache[entity] = new OlStyle({
+          fill: new OlFill({
+            color: colors[entity],
+          }),
+          stroke: new OlStroke({
+            color: colors[entity],
+            width: 2,
+          }),
+          image: new OlCircle({
+            radius: 4,
+            fill: new OlFill({
+              color: colors[entity],
+            }),
+          }),
+        });
+      }
+      return styleCache[entity];
+    }
+    return new OlStyle({
+      fill: new OlFill({
+        color: '#00c8f0',
+      }),
+      stroke: new OlStroke({
+        color: '#00c8f0',
+        width: 1.5,
+      }),
+      image: new OlCircle({
+        radius: 4,
+        fill: new OlFill({
+          color: '#00c8f0',
+        }),
+      }),
+    });
+  };
+  return styleFunction;
+}
+export function htmlLayerStyle() {
+  const styleFunction = feature => {
+    const group = feature.get('group');
+
+    if (group === store.state.activeLayerGroup.navbarGroup) {
+      return new OlStyle({
+        image: new OlIconStyle({
+          src: feature.get('icon'),
+          scale: 1,
+          opacity: 1,
+        }),
+      });
+    }
+    return [];
+  };
+  return styleFunction;
+}
+
+export const styleRefs = {
+  defaultStyle,
+  popupInfoStyle,
+  baseStyle,
+  colorMapStyle,
+  htmlLayerStyle,
+};
+
+export const defaultLimits = {
+  iconScale: {
+    smallestDefaultScale: 0.2,
+    largestDefaultScale: 1,
+    defaultMultiplier: 603000,
+  },
+  radius: {
+    smallestDefaultRadius: 5,
+    largestDefaultRadius: 30,
+    defaultMultiplier: 0.3,
+  },
+  radius2: {
+    smallestDefaultRadius: 5,
+    largestDefaultRadius: 30,
+    defaultMultiplier: 0.3,
+  },
+};
+
+const getText = function (text, resolution, maxResolution, placement, textWrap) {
+  if (resolution > maxResolution) {
+    text = '';
+  } else if (textWrap == 'hide') {
+    text = '';
+  } else if (textWrap == 'shorten') {
+    text = text.trunc(12);
+  } else if (textWrap == 'wrap' && (!placement || placement != 'line')) {
+    text = stringDivider(text, 16, '\n');
+  }
+
+  return text;
+};
+
+// https://stackoverflow.com/questions/14484787/wrap-text-in-javascript
+function stringDivider(str, width, spaceReplacer) {
+  if (str.length > width) {
+    let p = width;
+    while (p > 0 && str[p] != ' ' && str[p] != '-') {
+      p--;
+    }
+    if (p > 0) {
+      let left;
+      if (str.substring(p, p + 1) == '-') {
+        left = str.substring(0, p + 1);
+      } else {
+        left = str.substring(0, p);
+      }
+      const right = str.substring(p + 1);
+      return left + spaceReplacer + stringDivider(right, width, spaceReplacer);
+    }
+  }
+  return str;
+}
+
+const getIconScaleValue = (propertyValue, multiplier, smallestScale, largestScale) => {
+  const {smallestDefaultScale, largestDefaultScale, defaultMultiplier} = defaultLimits.iconScale;
+  const smallestValue = smallestScale || smallestDefaultScale;
+  const largestValue = largestScale || largestDefaultScale;
+  let scale = propertyValue / (multiplier || defaultMultiplier);
+  if (scale < smallestValue) {
+    scale = smallestValue;
+  }
+  if (scale > largestValue) {
+    scale = largestValue;
+  }
+  return scale;
+};
+
+const getRadiusValue = (propertyValue, multiplier, smallestRadius, largestRadius, defaultMultiplier) => {
+  const {smallestDefaultRadius, largestDefaultRadius} = defaultLimits.radius;
+  const smallestValue = smallestRadius || smallestDefaultRadius;
+  const largestValue = largestRadius || largestDefaultRadius;
+  let radius = Math.sqrt(propertyValue) * multiplier || defaultMultiplier;
+  if (radius < smallestValue) {
+    radius = smallestValue;
+  }
+  if (radius > largestValue) {
+    radius = largestValue;
+  }
+  return radius;
+};
+
+export const layersStylePropFn = {
+  default: {
+    iconScale: propertyValue => getIconScaleValue(propertyValue),
+    radius: propertyValue => getRadiusValue(propertyValue),
+    iconUrl: propertyValue => propertyValue,
+  },
+  delta_complexes1: {
+    fillColor: propertyValue => propertyValue,
+  },
+  epa_refineries: {
+    iconScaleFn: propertyValue => getIconScaleValue(propertyValue, 0.00000001, 0.2, 3.2),
+  },
+  points: {
+    strokeColor: propertyValue => propertyValue,
+    fillColor: propertyValue => propertyValue,
+  },
+  delta_complexes_all: {
+    strokeColor: propertyValue => propertyValue,
+    fillColor: propertyValue => propertyValue,
+  },
+  dodge_line: {
+    strokeColor: propertyValue => propertyValue,
+    strokeWidth: propertyValue => propertyValue,
+  },
+  polygons: {
+    strokeColor: propertyValue => propertyValue,
+    fillColor: propertyValue => propertyValue,
+  },
+};

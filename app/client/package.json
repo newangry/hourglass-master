@@ -1,0 +1,68 @@
+{
+  "name": "crystalball",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Crystalball mapping software template version",
+  "author": "brianholmes",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "lint": "prettier . --write --ignore-unknown && eslint --ignore-path .gitignore .",
+    "prepare": "cd ../../ && husky install ./app/client/.husky"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.13.0",
+    "@koumoul/vjsf": "^2.21.0",
+    "axios": "^1.2.1",
+    "colormap": "^2.3.0",
+    "deps": "^1.0.0",
+    "dotenv": "^16.0.2",
+    "jwt-decode": "^2.2.0",
+    "location": "0.0.1",
+    "material-design-icons": "^3.0.1",
+    "mediabox": "^1.1.2",
+    "navigator": "^1.0.1",
+    "ol": "^7.1.0",
+    "screenfull": "^6.0.2",
+    "tiptap": "^1.32.2",
+    "tiptap-commands": "^1.17.1",
+    "tiptap-utils": "^1.13.1",
+    "tiptap-vuetify": "^2.23.0",
+    "unplugin-vue-components": "^0.22.11",
+    "v-jsoneditor": "^1.4.1",
+    "vue": "^2.7.14",
+    "vue-cookies": "^1.7.0",
+    "vue-gallery": "^1.5.0",
+    "vue-i18n": "8",
+    "vue-image-lightbox": "^7.2.0",
+    "vue-lazyload": "^1.2.6",
+    "vue-router": "3.0.1",
+    "vuescroll": "^4.16.1",
+    "vuetify": "2.6.13",
+    "vuex": "^3.6.2",
+    "vuex-map-fields": "^1.4.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.3.0",
+    "@commitlint/config-conventional": "^17.3.0",
+    "@vitejs/plugin-vue2": "^2.2.0",
+    "eslint": "8.29.0",
+    "eslint-config-airbnb-base": "15.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-import-resolver-alias": "^1.1.2",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-vue": "9.8.0",
+    "husky": "^8.0.2",
+    "prettier": "^2.8.1",
+    "sass": "1.32.13",
+    "vite": "^3.2.5",
+    "vite-plugin-eslint": "1.8.1",
+    "vue-template-compiler": "^2.7.14"
+  },
+  "pnpm": {
+    "overrides": {
+      "popper.js": "@popperjs/core@2.11.6"
+    }
+  }
+}

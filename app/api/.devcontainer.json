@@ -1,0 +1,18 @@
+// See https://aka.ms/vscode-remote/containers for the
+// documentation about the devcontainer.json format
+{
+    "name": "API DevContainer",
+    "dockerComposeFile": [
+        "../../docker-compose.dev.yaml"
+    ],
+    // Set *default* container specific settings.json values on container create.
+    "settings": {
+        "terminal.integrated.shell.linux": "sh"
+    },
+    "service": "api",
+    "workspaceFolder": "/app",
+    "shutdownAction": "none",
+    "extensions": [
+        "rangav.vscode-thunder-client"
+    ]
+}
